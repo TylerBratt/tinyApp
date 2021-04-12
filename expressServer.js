@@ -2,6 +2,17 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
+const generateRandomString = () =>{
+  const charecters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  const stringLength = 6;
+  let randomString = '';
+  for (let i = 0; i < stringLength; i++) {
+    let randomNum = Math.floor(Math.random() * charecters.length);
+    randomString += charecters.substring(randomNum, randomNum + 1);
+  }
+  return randomString;
+};
+console.log(generateRandomString());
 
 app.set('view engine', 'ejs');
 
