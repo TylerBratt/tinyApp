@@ -16,5 +16,8 @@
   },
   "homepage": "https://github.com/TylerBratt/tinyApp#readme",
   "keywords": [],
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
