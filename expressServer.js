@@ -23,6 +23,11 @@ app.get('urls', (req, res)=> {
   res.render('urlsIndex', templateVars);
 });
 
+app.get('/urls/:shortURL', (req, res)=> {
+  const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
+  res.render('urlsShow', templateVars);
+});
+
 app.get('/hello', (req, res) => {
   res.send('<html><body><h1>Hello World!</h1></body><!html>\n');
 });
