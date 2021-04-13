@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const generateRandomString = () => {
-  const newKey = Math.random().toString(36).substring(2,8); 
+  const newKey = Math.random().toString(36).substring(2,8);
   return newKey;
 };
 const short = generateRandomString();
@@ -33,13 +33,20 @@ app.get("/urls/new", (req, res) => {
   res.render("urlsNew");
 });
 
-
 app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
 // and makes it equal to the user entered form input
   urlDatabase[short] = req.body.longURL;
   res.redirect(`/urls/${short}`);
-  console.log('LOOKEE HERE:', short);
+});
+
+//the path takes a : because it is looking for a variable
+// STOP FORGETTING THE '/'!!!!!!!!!
+app.post("/urls/:short/delete", (req, res) => {
+  // entering the correct path of on object is very important...
+  const shortURL = req.params.short;
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
 });
 
 app.get("/urls/:shortURL", (req, res) => {
