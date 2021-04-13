@@ -6,7 +6,7 @@ const generateRandomString = () => {
   const newKey = Math.random().toString(36).substring(2,8);
   return newKey;
 };
-const short = generateRandomString();
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -36,8 +36,10 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
 // and makes it equal to the user entered form input
-  urlDatabase[short] = req.body.longURL;
-  res.redirect(`/urls/${short}`);
+  const newKey = generateRandomString();
+  urlDatabase[newKey] = req.body.longURL;
+  console.log('lookee here first', req.body.longURL);
+  res.redirect(`/urls/${newKey}`);
 });
 
 //the path takes a : because it is looking for a variable
@@ -53,6 +55,13 @@ app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urlsShow", templateVars);
+});
+
+app.post("/urls/:shortURL", (req,res) => {
+  // const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${req.params.shortURL}`);
 });
 
 app.get("/u/:shortURL", (req, res) => {
