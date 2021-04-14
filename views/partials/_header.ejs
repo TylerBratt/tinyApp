@@ -9,22 +9,23 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <a class="nav-item nav-link" href="/register">Register</a>
-
-        <% if(username && username !== undefined) { %>
-          <div><h5>Logged In As TinyApp User: <%= username %></h5></div>
+        <a class="nav-item nav-link" href="/login">Login</a>
+        
+          <div>
+          <% if(username && username !== 'undefined') { %>
+            <div><h5>Welcome: <%= username %></h5></div>
+              <form action="/login" method="POST">
+                <div>
+                <button type="submit" action='/login'>Logout</button>
+              </div>
+              </form>
+              <% } else {%>
             <form action="/login" method="POST">
-              <div>
-              <button type="submit" action='/login'>Logout</button>
-            </div>
+              <button type="submit" action="/login">Login</button>
             </form>
-            <% } else {%>
-          
-          <form action="/login" method="POST">
-          <input type="text" name='username' placeholder='username'>
-          <button type="submit">Login</button>
-        </form>
-        <% } %>
+          <% } %>
         </div>
+      </div>
     </div>
   </nav>
 </header>

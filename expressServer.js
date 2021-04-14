@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const { response } = require("express");
 
 // SET and USEs
 app.set("view engine", "ejs");
@@ -25,16 +26,27 @@ const urlDatabase = {
 // USERS DATABASE
 const users = {
   userID : {
-    id: "JoeyJoeJoeJrShabadu",
+    id: 'userID',
     email: 'BarneysFriend@Simpsons.com',
     password: 'dumbestName'
   },
-  user2ID : {
-    id: 'MontyBurns',
+  userID2 : {
+    id: 'userID2',
     email: 'NukeSpringfield@Simpsons.com',
     password: 'Bobo'
   }
 };
+
+const findUserByEmail = email => {
+  for (const greaterKey in users) {
+    const lesserObj = users[greaterKey];
+    const userEmail = lesserObj.email;
+    if (userEmail === email) {
+      return lesserObj.id;
+    }
+  }
+};
+
 
 // URLS PAGE
 app.get("/urls", (req, res) => {
@@ -52,9 +64,22 @@ app.post("/urls", (req, res) => {
 });
 
 // LOGIN - LOGOUT - REGISTER
+
+app.get('/login', (req, res) =>{
+  const templateVars = {username: req.cookies.username};
+  res.render('login', templateVars);
+});
+
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+  const userId = findUserByEmail(userEmail);
+  if (users[userId].password === userPassword) {
+    res.cookie("userId", userId);
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.post('/logout', (req,res)=> {
@@ -69,17 +94,28 @@ app.get('/register', (req, res)=>{
 
 app.post('/register', (req, res) => {
   const userID = generateRandomString();
-  const username = req.body.username;
+  // const username = req.body.username;
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  users.userID = {
+  users[userID] = {
     id: userID,
     email: userEmail,
     password: userPassword
   };
-  res.cookie('username', username);
-  res.redirect('urls');
+  console.log(users);
+  const verification = (email) => {
+    if (!userEmail  || !userPassword) {
+      return res.status(400).send("You Done BAAAAAAD!!");
+    } else if (userEmail === users.email) {
+      return res.status(400).send("You Done BAAAAAAD!!");
+    }
+  };
+  res.cookie('userID', userID);
+  res.redirect('/urls');
+  
 });
+
+
 
 // NEW
 app.get("/urls/new", (req, res) => {
@@ -106,9 +142,10 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/edit", (req,res) => {
   // const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = {username: req.cookies.username};
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${req.params.shortURL}`);
+  res.redirect(`/urls/${req.params.shortURL}`, templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
