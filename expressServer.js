@@ -27,12 +27,12 @@ const urlDatabase = {
 const users = {
   userID : {
     id: 'userID',
-    email: 'BarneysFriend@Simpsons.com',
-    password: 'dumbestName'
+    email: 'JoeyJoeJoe@Simpsons.com',
+    password: 'Shabadoo'
   },
   userID2 : {
     id: 'userID2',
-    email: 'NukeSpringfield@Simpsons.com',
+    email: 'MontyBurns@Simpsons.com',
     password: 'Bobo'
   }
 };
@@ -46,9 +46,6 @@ const findUserByEmail = email => {
     }
   }
 };
-
-
-
 
 // URLS PAGE
 app.get("/urls", (req, res) => {
@@ -85,7 +82,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post('/logout', (req,res)=> {
-  res.clearCookie();
+  res.clearCookie('userId');
   res.redirect('/urls');
 });
 
@@ -117,7 +114,7 @@ app.post('/register', (req, res) => {
     }
     
   };
-  res.cookie('userID', userID);
+  res.cookie('userId', userID);
   res.redirect('/urls');
 });
 

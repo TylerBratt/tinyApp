@@ -14,15 +14,11 @@
           <div>
           <% if(userId && userId !== 'undefined') { %>
             <div><h5>Welcome: <%= userId %></h5></div>
-              <form action="/login" method="POST">
+              <form action="/logout" method="POST">
                 <div>
                 <button type="submit" action='/login'>Logout</button>
               </div>
               </form>
-              <% } else {%>
-            <form action="/login" method="POST">
-              <button type="submit" action="/login">Login</button>
-            </form>
           <% } %>
         </div>
       </div>
