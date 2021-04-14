@@ -12,8 +12,8 @@
         <a class="nav-item nav-link" href="/login">Login</a>
         
           <div>
-          <% if(username && username !== 'undefined') { %>
-            <div><h5>Welcome: <%= username %></h5></div>
+          <% if(userId && userId !== 'undefined') { %>
+            <div><h5>Welcome: <%= userId %></h5></div>
               <form action="/login" method="POST">
                 <div>
                 <button type="submit" action='/login'>Logout</button>

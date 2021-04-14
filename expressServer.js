@@ -48,10 +48,12 @@ const findUserByEmail = email => {
 };
 
 
+
+
 // URLS PAGE
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase,
-    username: req.cookies['username'] };
+    userId: req.cookies['userId'] };
   res.render("urlsIndex", templateVars);
 });
 
@@ -66,7 +68,7 @@ app.post("/urls", (req, res) => {
 // LOGIN - LOGOUT - REGISTER
 
 app.get('/login', (req, res) =>{
-  const templateVars = {username: req.cookies.username};
+  const templateVars = {userId: req.cookies.userId};
   res.render('login', templateVars);
 });
 
@@ -88,13 +90,12 @@ app.post('/logout', (req,res)=> {
 });
 
 app.get('/register', (req, res)=>{
-  const templateVars = {username: req.cookies.username};
+  const templateVars = {userId: req.cookies.userId};
   res.render('register', templateVars);
 });
 
 app.post('/register', (req, res) => {
   const userID = generateRandomString();
-  // const username = req.body.username;
   const userEmail = req.body.email;
   const userPassword = req.body.password;
   users[userID] = {
@@ -102,24 +103,29 @@ app.post('/register', (req, res) => {
     email: userEmail,
     password: userPassword
   };
-  console.log(users);
   const verification = (email) => {
     if (!userEmail  || !userPassword) {
       return res.status(400).send("You Done BAAAAAAD!!");
     } else if (userEmail === users.email) {
       return res.status(400).send("You Done BAAAAAAD!!");
+    } else if (userEmail === users[userID].email) {
+      res.send("email is already in use");
+    } else if (userEmail === undefined) {
+      res.status(403).send("No such email on file");
+    } else if (userEmail.password !== userPassword) {
+      res.status(403).send("The passwords don't match");
     }
+    
   };
   res.cookie('userID', userID);
   res.redirect('/urls');
-  
 });
 
 
 
 // NEW
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies.username};
+  const templateVars = {userId: req.cookies.userId};
   res.render("urlsNew", templateVars);
 });
 
@@ -142,7 +148,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/edit", (req,res) => {
   // const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-  const templateVars = {username: req.cookies.username};
+  const templateVars = {userId: req.cookies.userId};
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${req.params.shortURL}`, templateVars);
