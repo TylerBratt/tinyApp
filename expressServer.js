@@ -78,6 +78,11 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
+app.post('/logout', (req,res)=> {
+  res.clearCookie();
+  res.redirect('/urls');
+})
+
 app.get("/hello", (req, res) => {
   res.send(`<html><body><h1>Hello World!</h1></body><!html>\n`);
 });
@@ -85,3 +90,4 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on ${PORT}!`);
 });
+
