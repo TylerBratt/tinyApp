@@ -86,7 +86,7 @@ app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
 // and makes it equal to the user entered form input
   const newKey = generateRandomString();
-  console.log(req.body);
+
   //NEW longUrl now disappears -- changed path in urlsIndex
   urlDatabase[newKey] = req.body.longURL;
   res.redirect(`/urls/${newKey}`);
@@ -170,7 +170,11 @@ app.post("/urls/:short/delete", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
   const userId = req.cookies.userId;
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], userId };
+  const templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL],
+    urlUserID: urlDatabase[req.params.shortURL].id,
+    userId };
   res.render("urlsShow", templateVars);
 });
 
@@ -183,8 +187,16 @@ app.post("/urls/:shortURL/edit", (req,res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortUrl]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    if (longURL === undefined) {
+      res.status(302);
+    } else {
+      res.redirect(longURL);
+    }
+  } else {
+    res.status(404).send('This short URL does not correspond to a long URL in the database');
+  }
 });
 
 

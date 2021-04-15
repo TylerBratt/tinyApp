@@ -21,6 +21,11 @@
         </tr>
       </thead>
       <tbody>
+        <% if(!userId) { %>
+          <div class="alert alert-warning" role="alert">
+            To view this page, please <a href="/register" class="alert-link">register</a> or <a href="/login" class="alert-link">login</a>
+          </div>
+          <% } else { %>
         <% for(let url in urls) { %>
           <tr>
             <td><a href="<%= urls[url].longURL %>"><%= url %></a></td>
@@ -36,8 +41,14 @@
               </td>
           </tr>
           <% } %>
+          <% } %>
         </tbody>
       </table>
+      <% if (userId) { %>
+      <div class="alert alert-info" role="alert">
+        Create a <a href="/urls/new" class="alert-info"><b>New Short URL</b></a>
+      </div>
+    <% } %>
   </main>
 
 

@@ -12,7 +12,15 @@
   <div class="car text-center">
     <div class="card-header"></div>
       <div class="card-body">
-        
+        <% if (!userId) { %>
+          <div class="alert alert-warning" role="alert">
+            This link is not in your database.
+          </div>
+          <% } else if (userId.id !== urlUserID) { %>
+            <div class="alert alert-warning" role="alert">
+            This link is not in your database.
+            </div>
+            <% } %>
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a>
         </p>
