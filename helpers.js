@@ -30,7 +30,7 @@ const addNewUser = (name, email, password) => {
     id: userId,
     name,
     email,
-    password: bcrypt.hasshSync(password, saltRounds)
+    password: bcrypt.hashSync(password, saltRounds)
   };
 };
 
@@ -44,10 +44,30 @@ const authenticateUser = (email, password) => {
   }
 };
 
+const userEmails = (email, users) => {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const userCookie = (cookie, users) => {
+  for (const user in users) {
+    if (cookie === user) {
+      return true;
+    }
+  }
+  return false;
+};
+
 module.exports = {
   generateRandomString,
   findUserByEmail,
   urlsForUser,
   addNewUser,
-  authenticateUser
+  authenticateUser,
+  userEmails,
+  userCookie
 };

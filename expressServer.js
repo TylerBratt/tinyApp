@@ -19,6 +19,8 @@ const {
   generateRandomString,
   findUserByEmail,
   urlsForUser,
+  userEmails,
+  userCookie,
   addNewUser,
   authenticateUser
 } = require('./helpers');
@@ -35,84 +37,106 @@ const users = {
   userID : {
     id: 'userID',
     email: 'JoeyJoeJoe@Simpsons.com',
-    password: 'Shabadoo'
+    password: bcrypt.hashSync('Shabadoo', saltRounds)
   },
   userID2 : {
     id: 'userID2',
     email: 'MontyBurns@Simpsons.com',
-    password: 'Bobo'
+    password: bcrypt.hashSync('Bobo', saltRounds)
   }
 };
 
 // URLS PAGE
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: urlsForUser(req.session['userId'], urlDatabase),
-    userId: users[req.session['userId']] };
-  res.render("urlsIndex", templateVars);
-
+  if (!userCookie(req.session.userId, users)) {
+    res.redirect('/login');
+  } else {
+    const templateVars = {
+      urls: urlsForUser(req.session.userId, urlDatabase),
+      userId: users[req.session.userId] };
+    res.render("urlsIndex", templateVars);
+  }
 });
 
 app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
 // and makes it equal to the user entered form input
-  const newKey = generateRandomString();
+  if (req.session.userId) {
+    const newKey = generateRandomString();
+    urlDatabase[newKey] = {
+      longURL: req.body.longURL,
+      usedId: req.session.userId
+    };
+    res.redirect(`/urls/${newKey}`);
+  } else {
+    res.status(401).send('You must be logged in');
+  }
+
 
   //NEW longUrl now disappears -- changed path in urlsIndex
-  urlDatabase[newKey] = req.body.longURL;
-  res.redirect(`/urls/${newKey}`);
 
 
 });
 
 // LOGIN - LOGOUT - REGISTER
 
-app.get('/login', (req, res) =>{
-  const templateVars = {userId: req.session.userId};
-  res.render('login', templateVars);
+app.get('/login', (req, res) => {
+  if (userCookie(req.session.userId, users)) {
+    res.redirect('/urls');
+  } else {
+    const templateVars = {userId: req.session.userId};
+    res.render('login', templateVars);
+  }
 });
 
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  const userId = findUserByEmail(userEmail);
-  if (users[userId].password === userPassword) {
-    req.session.userId = userId;
-    res.redirect('/urls');
+  
+  if (!userEmails(userEmail, users)) {
+    res.status(403).send('No account found with this email');
   } else {
-    res.redirect('/login');
+    const userId = findUserByEmail(userEmail);
+    if (!bcrypt.compareSync(userPassword, users[userId].password)) {
+      res.status(403).send('Enter a valid password');
+    } else {
+      req.session.userId = userId;
+      res.redirect('/urls');
+    }
   }
 });
 
 app.post('/logout', (req,res)=> {
-  res.clearCookie('userId');
+  req.session['userId'] = null;
   res.redirect('/login');
 });
 
-app.get('/register', (req, res)=>{
-  const templateVars = {userId: req.session.userId};
-  res.render('register', templateVars);
+app.get('/register', (req, res)=> {
+  if (userCookie(req.session.userId)) {
+    res.redirect('/urls');
+  } else {
+    const templateVars = {userId: req.session.userId};
+    res.render('register', templateVars);
+  }
 });
 
 app.post('/register', (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  const userID = generateRandomString();
-  users[userID] = {
-    id: userID,
-    email: userEmail,
-    password: userPassword
-  };
+
   if (!userEmail || !userPassword) {
     res.status(400).send('Not a valid email or password');
+  } else if (userEmails(userEmail, users)) {
+    res.status(400).send('Account is taken');
   } else {
     const userID = generateRandomString();
+    const password = bcrypt.hashSync(userPassword, saltRounds);
     users[userID] = {
       id: userID,
       email: userEmail,
-      password: userPassword
+      password
     };
-    req.session['userId'] = users.id;
+    req.session['userId'] = users[userID].id;
     res.redirect('/urls');
   }
 });
@@ -120,13 +144,13 @@ app.post('/register', (req, res) => {
 
 // NEW
 app.get("/urls/new", (req, res) => {
-  
-  const userId = req.session.userId;
-  const templateVars = { userId };
-  if (!userId) {
+  if (!userCookie(req.session.userId, users)) {
     res.redirect('/login');
+  } else {
+    const userId = req.session.userId;
+    const templateVars = { userId };
+    res.render("urlsNew", templateVars);
   }
-  res.render("urlsNew", templateVars);
 });
 
 // DELETE
@@ -142,13 +166,18 @@ app.post("/urls/:short/delete", (req, res) => {
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
-  const userId = req.session.userId;
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    urlUserID: urlDatabase[req.params.shortURL].id,
-    userId };
-  res.render("urlsShow", templateVars);
+  if (urlDatabase[req.params.shortURL]) {
+    const userId = req.session.userId;
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL],
+      urlUserID: urlDatabase[req.params.shortURL].id,
+      userId };
+    res.render("urlsShow", templateVars);
+  } else {
+    res.status(404).send('cannot find path');
+  }
+
 });
 
 app.post("/urls/:shortURL/edit", (req,res) => {
@@ -174,7 +203,11 @@ app.get("/u/:shortURL", (req, res) => {
 
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (userCookie(req.session.userId, users)) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/register');
+  }
 });
 
 app.get("/urls.json", (req, res) => {
