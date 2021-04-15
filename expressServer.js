@@ -47,11 +47,24 @@ const findUserByEmail = email => {
   }
 };
 
+const validateLogin = (email, password) => {
+  if (!users[email]) {
+    return {error:'userEmail already registered', data:null};
+  }
+  if (users[email].password === password) {
+    return {error:null, data:users[email]};
+  } else {
+    return {error:"bad password", data:null};
+  }
+};
+
 // URLS PAGE
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase,
     userId: req.cookies['userId'] };
   res.render("urlsIndex", templateVars);
+  res.cookie('userId');
+
 });
 
 app.post("/urls", (req, res) => {
@@ -60,6 +73,8 @@ app.post("/urls", (req, res) => {
   const newKey = generateRandomString();
   urlDatabase[newKey] = req.body.longURL;
   res.redirect(`/urls/${newKey}`);
+
+
 });
 
 // LOGIN - LOGOUT - REGISTER
@@ -100,20 +115,13 @@ app.post('/register', (req, res) => {
     email: userEmail,
     password: userPassword
   };
-  const verification = (email) => {
-    if (!userEmail  || !userPassword) {
-      return res.status(400).send("You Done BAAAAAAD!!");
-    } else if (userEmail === users.email) {
-      return res.status(400).send("You Done BAAAAAAD!!");
-    } else if (userEmail === users[userID].email) {
-      res.send("email is already in use");
-    } else if (userEmail === undefined) {
-      res.status(403).send("No such email on file");
-    } else if (userEmail.password !== userPassword) {
-      res.status(403).send("The passwords don't match");
-    }
-    
-  };
+  const result = validateLogin(userEmail, userPassword);
+  if (result.error) {
+    return res.send(result.error);
+  }
+  res.cookie('email', result.data.email);
+  res.redirect('/');
+  
   res.cookie('userId', userID);
   res.redirect('/urls');
 });
@@ -139,7 +147,9 @@ app.post("/urls/:short/delete", (req, res) => {
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const userId = req.cookies.userId;
+  console.log(userId);
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], userId };
   res.render("urlsShow", templateVars);
 });
 

@@ -6,18 +6,16 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <a class="nav-item nav-link" href="/register">Register</a>
-        <a class="nav-item nav-link" href="/login">Login</a>
+        <a style="width:90px;margin-top:7px;" class="nav-item nav-link" href="/urls">My URLs</a>
+        <a style="width:150px;margin-top:7px;"class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a style="margin-top:7px;"class="nav-item nav-link" href="/register">Register</a>
+        <a style="margin-top:7px;"class="nav-item nav-link" href="/login">Login</a>
         
-          <div>
+          <div style='display:flex;justify-content:flex-end;width:63vw;'>
           <% if(userId && userId !== 'undefined') { %>
-            <div><h5>Welcome: <%= userId %></h5></div>
+            <div ><h5 style="margin-top:20px;margin-right:15px">Welcome: <%= userId %></h5></div>
               <form action="/logout" method="POST">
-                <div>
-                <button type="submit" action='/login'>Logout</button>
-              </div>
+                <button style="margin-top:12px;"class="btn btn-outline-light"type="submit" action='/login'>Logout</button>
               </form>
           <% } %>
         </div>
