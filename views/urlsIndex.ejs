@@ -21,7 +21,7 @@
         </tr>
       </thead>
       <tbody>
-        <% if(!userId) { %>
+        <% if(!user) { %>
           <div class="alert alert-warning" role="alert">
             To view this page, please <a href="/register" class="alert-link">register</a> or <a href="/login" class="alert-link">login</a>
           </div>
@@ -44,7 +44,7 @@
           <% } %>
         </tbody>
       </table>
-      <% if (userId) { %>
+      <% if (user) { %>
       <div class="alert alert-info" role="alert">
         Create a <a href="/urls/new" class="alert-info"><b>New Short URL</b></a>
       </div>

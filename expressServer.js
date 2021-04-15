@@ -1,4 +1,4 @@
-// REQUIRED
+// REQUIRED ITEMS AND FILES
 const express = require("express");
 const app = express();
 const PORT = 8080;
@@ -15,14 +15,13 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
+// HELPER FUNCTIONS
 const {
   generateRandomString,
   findUserByEmail,
   urlsForUser,
   userEmails,
   userCookie,
-  addNewUser,
-  authenticateUser
 } = require('./helpers');
 
 
@@ -53,10 +52,11 @@ app.get("/urls", (req, res) => {
   } else {
     const templateVars = {
       urls: urlsForUser(req.session.userId, urlDatabase),
-      userId: users[req.session.userId] };
+      user: users[req.session.userId] };
     res.render("urlsIndex", templateVars);
   }
 });
+
 
 app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
@@ -65,17 +65,12 @@ app.post("/urls", (req, res) => {
     const newKey = generateRandomString();
     urlDatabase[newKey] = {
       longURL: req.body.longURL,
-      usedId: req.session.userId
+      userID: req.session.userId
     };
     res.redirect(`/urls/${newKey}`);
   } else {
     res.status(401).send('You must be logged in');
   }
-
-
-  //NEW longUrl now disappears -- changed path in urlsIndex
-
-
 });
 
 // LOGIN - LOGOUT - REGISTER
@@ -84,7 +79,7 @@ app.get('/login', (req, res) => {
   if (userCookie(req.session.userId, users)) {
     res.redirect('/urls');
   } else {
-    const templateVars = {userId: req.session.userId};
+    const templateVars = {user: users[req.session.userId] };
     res.render('login', templateVars);
   }
 });
@@ -96,7 +91,7 @@ app.post("/login", (req, res) => {
   if (!userEmails(userEmail, users)) {
     res.status(403).send('No account found with this email');
   } else {
-    const userId = findUserByEmail(userEmail);
+    const userId = findUserByEmail(userEmail, users);
     if (!bcrypt.compareSync(userPassword, users[userId].password)) {
       res.status(403).send('Enter a valid password');
     } else {
@@ -115,7 +110,7 @@ app.get('/register', (req, res)=> {
   if (userCookie(req.session.userId)) {
     res.redirect('/urls');
   } else {
-    const templateVars = {userId: req.session.userId};
+    const templateVars = {user: users[req.session.userId] };
     res.render('register', templateVars);
   }
 });
@@ -129,8 +124,8 @@ app.post('/register', (req, res) => {
   } else if (userEmails(userEmail, users)) {
     res.status(400).send('Account is taken');
   } else {
-    const userID = generateRandomString();
     const password = bcrypt.hashSync(userPassword, saltRounds);
+    const userID = generateRandomString();
     users[userID] = {
       id: userID,
       email: userEmail,
@@ -147,17 +142,14 @@ app.get("/urls/new", (req, res) => {
   if (!userCookie(req.session.userId, users)) {
     res.redirect('/login');
   } else {
-    const userId = req.session.userId;
-    const templateVars = { userId };
+    const templateVars = { user: users[req.session.userId]  };
     res.render("urlsNew", templateVars);
   }
 });
 
 // DELETE
-//the path takes a : because it is looking for a variable
-// STOP FORGETTING THE '/'!!!!!!!!!
+
 app.post("/urls/:short/delete", (req, res) => {
-  // entering the correct path of on object is very important...
   const shortURL = req.params.short;
   delete urlDatabase[shortURL];
   res.redirect("/urls");
@@ -165,14 +157,12 @@ app.post("/urls/:short/delete", (req, res) => {
 
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
-  // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
   if (urlDatabase[req.params.shortURL]) {
-    const userId = req.session.userId;
     const templateVars = {
       shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL],
+      longURL: urlDatabase[req.params.shortURL].longURL,
       urlUserID: urlDatabase[req.params.shortURL].id,
-      userId };
+      user: users[req.session.userId]  };
     res.render("urlsShow", templateVars);
   } else {
     res.status(404).send('cannot find path');
@@ -181,8 +171,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req,res) => {
-  // const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-  const templateVars = {userId: req.session.userId};
+  const templateVars = {user: users[req.session.userId] };
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${req.params.shortURL}`, templateVars);
@@ -201,7 +190,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-
+// OTHERS
 app.get("/", (req, res) => {
   if (userCookie(req.session.userId, users)) {
     res.redirect('/urls');

@@ -23,27 +23,6 @@ const urlsForUser = (userID, urlDatabase) => {
   return userUrls;
 };
 
-const addNewUser = (name, email, password) => {
-  const userId = generateRandomString();
-
-  const newUserObj = {
-    id: userId,
-    name,
-    email,
-    password: bcrypt.hashSync(password, saltRounds)
-  };
-};
-
-const authenticateUser = (email, password) => {
-  const user = findUserByEmail(email);
-
-  if (user && bcrypt.compareSync(password, user.password)) {
-    return user;
-  } else {
-    return false;
-  }
-};
-
 const userEmails = (email, users) => {
   for (const user in users) {
     if (users[user].email === email) {
@@ -66,8 +45,6 @@ module.exports = {
   generateRandomString,
   findUserByEmail,
   urlsForUser,
-  addNewUser,
-  authenticateUser,
   userEmails,
   userCookie
 };
