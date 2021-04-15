@@ -4,7 +4,10 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const session = require('cookie-session');
 const { response } = require("express");
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 // SET and USEs
 app.set("view engine", "ejs");
@@ -17,25 +20,7 @@ const generateRandomString = () => {
   return newKey;
 };
 
-// STARTING DATABASE
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-};
-
-// USERS DATABASE
-const users = {
-  userID : {
-    id: 'userID',
-    email: 'JoeyJoeJoe@Simpsons.com',
-    password: 'Shabadoo'
-  },
-  userID2 : {
-    id: 'userID2',
-    email: 'MontyBurns@Simpsons.com',
-    password: 'Bobo'
-  }
-};
+// MORE FUNCTIONS
 
 const findUserByEmail = email => {
   for (const greaterKey in users) {
@@ -58,6 +43,36 @@ const validateLogin = (email, password) => {
   }
 };
 
+const urlsForUser = (userID) => {
+  const result = {};
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userID === userID) {
+      result[url] = urlDatabase[url];
+    }
+  }
+  return result;
+};
+
+// STARTING DATABASE
+const urlDatabase = {
+  "b2xVn2": {longURL:"http://www.lighthouselabs.ca", userID: 'userId'},
+  "9sm5xK": {longURL:"http://www.google.com", userID: 'userId'}
+};
+
+// USERS DATABASE
+const users = {
+  userID : {
+    id: 'userID',
+    email: 'JoeyJoeJoe@Simpsons.com',
+    password: 'Shabadoo'
+  },
+  userID2 : {
+    id: 'userID2',
+    email: 'MontyBurns@Simpsons.com',
+    password: 'Bobo'
+  }
+};
+
 // URLS PAGE
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase,
@@ -71,6 +86,8 @@ app.post("/urls", (req, res) => {
 // this line generates a string and sets it as the key
 // and makes it equal to the user entered form input
   const newKey = generateRandomString();
+  console.log(req.body);
+  //NEW longUrl now disappears -- changed path in urlsIndex
   urlDatabase[newKey] = req.body.longURL;
   res.redirect(`/urls/${newKey}`);
 
@@ -98,7 +115,7 @@ app.post("/login", (req, res) => {
 
 app.post('/logout', (req,res)=> {
   res.clearCookie('userId');
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.get('/register', (req, res)=>{
@@ -130,7 +147,12 @@ app.post('/register', (req, res) => {
 
 // NEW
 app.get("/urls/new", (req, res) => {
-  const templateVars = {userId: req.cookies.userId};
+  
+  const userId = req.cookies.userId;
+  const templateVars = { userId };
+  if (!userId) {
+    res.redirect('/login');
+  }
   res.render("urlsNew", templateVars);
 });
 
@@ -148,7 +170,6 @@ app.post("/urls/:short/delete", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
   const userId = req.cookies.userId;
-  console.log(userId);
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], userId };
   res.render("urlsShow", templateVars);
 });
