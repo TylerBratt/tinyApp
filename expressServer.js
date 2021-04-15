@@ -3,55 +3,26 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
-const session = require('cookie-session');
-const { response } = require("express");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 // SET and USEs
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
-// GENERATE THE 6 DIGIT SHORL URL
-const generateRandomString = () => {
-  const newKey = Math.random().toString(36).substring(2,8);
-  return newKey;
-};
+const {
+  generateRandomString,
+  findUserByEmail,
+  urlsForUser,
+  addNewUser,
+  authenticateUser
+} = require('./helpers');
 
-// MORE FUNCTIONS
-
-const findUserByEmail = email => {
-  for (const greaterKey in users) {
-    const lesserObj = users[greaterKey];
-    const userEmail = lesserObj.email;
-    if (userEmail === email) {
-      return lesserObj.id;
-    }
-  }
-};
-
-const validateLogin = (email, password) => {
-  if (!users[email]) {
-    return {error:'userEmail already registered', data:null};
-  }
-  if (users[email].password === password) {
-    return {error:null, data:users[email]};
-  } else {
-    return {error:"bad password", data:null};
-  }
-};
-
-const urlsForUser = (userID) => {
-  const result = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === userID) {
-      result[url] = urlDatabase[url];
-    }
-  }
-  return result;
-};
 
 // STARTING DATABASE
 const urlDatabase = {
@@ -75,10 +46,10 @@ const users = {
 
 // URLS PAGE
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase,
-    userId: req.cookies['userId'] };
+  const templateVars = {
+    urls: urlsForUser(req.session['userId'], urlDatabase),
+    userId: users[req.session['userId']] };
   res.render("urlsIndex", templateVars);
-  res.cookie('userId');
 
 });
 
@@ -97,7 +68,7 @@ app.post("/urls", (req, res) => {
 // LOGIN - LOGOUT - REGISTER
 
 app.get('/login', (req, res) =>{
-  const templateVars = {userId: req.cookies.userId};
+  const templateVars = {userId: req.session.userId};
   res.render('login', templateVars);
 });
 
@@ -106,7 +77,7 @@ app.post("/login", (req, res) => {
   const userPassword = req.body.password;
   const userId = findUserByEmail(userEmail);
   if (users[userId].password === userPassword) {
-    res.cookie("userId", userId);
+    req.session.userId = userId;
     res.redirect('/urls');
   } else {
     res.redirect('/login');
@@ -119,36 +90,38 @@ app.post('/logout', (req,res)=> {
 });
 
 app.get('/register', (req, res)=>{
-  const templateVars = {userId: req.cookies.userId};
+  const templateVars = {userId: req.session.userId};
   res.render('register', templateVars);
 });
 
 app.post('/register', (req, res) => {
-  const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
+  const userID = generateRandomString();
   users[userID] = {
     id: userID,
     email: userEmail,
     password: userPassword
   };
-  const result = validateLogin(userEmail, userPassword);
-  if (result.error) {
-    return res.send(result.error);
+  if (!userEmail || !userPassword) {
+    res.status(400).send('Not a valid email or password');
+  } else {
+    const userID = generateRandomString();
+    users[userID] = {
+      id: userID,
+      email: userEmail,
+      password: userPassword
+    };
+    req.session['userId'] = users.id;
+    res.redirect('/urls');
   }
-  res.cookie('email', result.data.email);
-  res.redirect('/');
-  
-  res.cookie('userId', userID);
-  res.redirect('/urls');
 });
-
 
 
 // NEW
 app.get("/urls/new", (req, res) => {
   
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   const templateVars = { userId };
   if (!userId) {
     res.redirect('/login');
@@ -169,7 +142,7 @@ app.post("/urls/:short/delete", (req, res) => {
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
   // :shortURL is the vaule that we enter into the browser that leads to a key in the database.
-  const userId = req.cookies.userId;
+  const userId = req.session.userId;
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
@@ -180,7 +153,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/edit", (req,res) => {
   // const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-  const templateVars = {userId: req.cookies.userId};
+  const templateVars = {userId: req.session.userId};
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${req.params.shortURL}`, templateVars);
@@ -215,4 +188,3 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on ${PORT}!`);
 });
-
