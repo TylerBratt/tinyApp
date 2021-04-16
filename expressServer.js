@@ -149,16 +149,16 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls/:short/delete", (req, res) => {
   if (req.session.userId === urlDatabase[req.params.shortURL].userId) {
-  const shortURL = req.params.short;
-  delete urlDatabase[shortURL];
-  res.redirect("/urls");
+    const shortURL = req.params.short;
+    delete urlDatabase[shortURL];
+    res.redirect("/urls");
   }
-  res.status(404).send('cannot find path')
+  res.status(404).send('cannot find path');
 });
 
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
-  if (req.session.userId == urlDatabase[req.params.shortURL].userID) {
+  if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
 
     const templateVars = {
       shortURL: req.params.shortURL,
@@ -173,14 +173,13 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req,res) => {
-  const userID = req.session.userId;
-  const usersURLs = urlsForUser(userID, urlDatabase);
-  if (req.session.userId == urlDatabase[req.params.shortURL].userID) {
+
+  if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
     const shortURL = req.params.shortURL;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect(`/urls`);
   } else {
-    res.status(401).send('Not Authorized')
+    res.status(401).send('Not Authorized');
   }
 });
 
