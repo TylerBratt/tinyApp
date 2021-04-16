@@ -24,14 +24,13 @@ const {
   userCookie,
 } = require('./helpers');
 
+// DATABASES
 
-// STARTING DATABASE
 const urlDatabase = {
-  "b2xVn2": {longURL:"http://www.lighthouselabs.ca", userID: 'userId'},
-  "9sm5xK": {longURL:"http://www.google.com", userID: 'userId'}
+  "b2xVn2": {longURL:"http://www.lighthouselabs.ca", userID: 'userID'},
+  "9sm5xK": {longURL:"http://www.google.com", userID: 'userID'}
 };
 
-// USERS DATABASE
 const users = {
   userID : {
     id: 'userID',
@@ -44,6 +43,7 @@ const users = {
     password: bcrypt.hashSync('Bobo', saltRounds)
   }
 };
+
 
 // URLS PAGE
 app.get("/urls", (req, res) => {
@@ -59,8 +59,6 @@ app.get("/urls", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-// this line generates a string and sets it as the key
-// and makes it equal to the user entered form input
   if (req.session.userId) {
     const newKey = generateRandomString();
     urlDatabase[newKey] = {
@@ -150,19 +148,23 @@ app.get("/urls/new", (req, res) => {
 // DELETE
 
 app.post("/urls/:short/delete", (req, res) => {
+  if (req.session.userId === urlDatabase[req.params.shortURL].userId) {
   const shortURL = req.params.short;
   delete urlDatabase[shortURL];
   res.redirect("/urls");
+  }
+  res.status(404).send('cannot find path')
 });
 
 // INDIVIDUAL SHORT PAGE URL
 app.get("/urls/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL]) {
+  if (req.session.userId == urlDatabase[req.params.shortURL].userID) {
+
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
       urlUserID: urlDatabase[req.params.shortURL].id,
-      user: users[req.session.userId]  };
+      user: users[req.session.userId] };
     res.render("urlsShow", templateVars);
   } else {
     res.status(404).send('cannot find path');
@@ -170,11 +172,16 @@ app.get("/urls/:shortURL", (req, res) => {
 
 });
 
-app.post("/urls/:shortURL/edit", (req,res) => {
-  const templateVars = {user: users[req.session.userId] };
-  const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${req.params.shortURL}`, templateVars);
+app.post("/urls/:shortURL", (req,res) => {
+  const userID = req.session.userId;
+  const usersURLs = urlsForUser(userID, urlDatabase);
+  if (req.session.userId == urlDatabase[req.params.shortURL].userID) {
+    const shortURL = req.params.shortURL;
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    res.redirect(`/urls`);
+  } else {
+    res.status(401).send('Not Authorized')
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
