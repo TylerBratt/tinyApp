@@ -148,7 +148,7 @@ app.get("/urls/new", (req, res) => {
 // DELETE
 
 app.post("/urls/:short/delete", (req, res) => {
-  if (req.session.userId === urlDatabase[req.params.shortURL].userId) {
+  if (req.session.userId === urlDatabase[req.params.short].userID) {
     const shortURL = req.params.short;
     delete urlDatabase[shortURL];
     res.redirect("/urls");
