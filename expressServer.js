@@ -7,7 +7,7 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-// SET and USEs
+// SET and USEs enables some exterior code (cookie encryption, body parser, ejs)
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
@@ -15,7 +15,7 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS relegated to external file to clear server
 const {
   generateRandomString,
   findUserByEmail,
@@ -24,8 +24,8 @@ const {
   userCookie,
 } = require('./helpers');
 
-// DATABASES
 
+// STARTER DATABASES
 const urlDatabase = {
   "b2xVn2": {longURL:"http://www.lighthouselabs.ca", userID: 'userID'},
   "9sm5xK": {longURL:"http://www.google.com", userID: 'userID'}
@@ -46,9 +46,10 @@ const users = {
 
 
 // URLS PAGE
+//Ensures that only logged in users can accesss their homepage
 app.get("/urls", (req, res) => {
   if (!userCookie(req.session.userId, users)) {
-    res.redirect('/login');
+    res.status(401).send('You must be logged in');
   } else {
     const templateVars = {
       urls: urlsForUser(req.session.userId, urlDatabase),
@@ -57,7 +58,7 @@ app.get("/urls", (req, res) => {
   }
 });
 
-
+// This is the redirection from the :shortULRS page.  When posting to URLs, a random string will be generated and set to a variable that will represent the shortened URL for a certain long form URL
 app.post("/urls", (req, res) => {
   if (req.session.userId) {
     const newKey = generateRandomString();
@@ -73,6 +74,7 @@ app.post("/urls", (req, res) => {
 
 // LOGIN - LOGOUT - REGISTER
 
+//   If a cookie is present, user will be redirected immediately to their homepage
 app.get('/login', (req, res) => {
   if (userCookie(req.session.userId, users)) {
     res.redirect('/urls');
@@ -81,6 +83,8 @@ app.get('/login', (req, res) => {
     res.render('login', templateVars);
   }
 });
+
+// entering a valid email address and password from the database will log in user, otherwise they will not gain access to tinyApp.
 
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
@@ -101,17 +105,21 @@ app.post("/login", (req, res) => {
 
 app.post('/logout', (req,res)=> {
   req.session['userId'] = null;
-  res.redirect('/login');
+  res.redirect('/urls');
 });
 
+//If cookies are present will redirect user to homepage.
+
 app.get('/register', (req, res)=> {
-  if (userCookie(req.session.userId)) {
+  if (userCookie(req.session.userId, users)) {
     res.redirect('/urls');
   } else {
     const templateVars = {user: users[req.session.userId] };
     res.render('register', templateVars);
   }
 });
+
+// entering an email address and password to the database, will not allow empty fields, or will announce if the account (email) is already taken.
 
 app.post('/register', (req, res) => {
   const userEmail = req.body.email;
@@ -136,6 +144,8 @@ app.post('/register', (req, res) => {
 
 
 // NEW
+// if no cookies present, will redirect to login page.
+
 app.get("/urls/new", (req, res) => {
   if (!userCookie(req.session.userId, users)) {
     res.redirect('/login');
@@ -146,32 +156,35 @@ app.get("/urls/new", (req, res) => {
 });
 
 // DELETE
-
+// allows user to delete stored short and long URLs
 app.post("/urls/:short/delete", (req, res) => {
   if (req.session.userId === urlDatabase[req.params.short].userID) {
     const shortURL = req.params.short;
     delete urlDatabase[shortURL];
     res.redirect("/urls");
   }
-  res.status(404).send('cannot find path');
+  res.status(404).send('You do not have permission to delete this shortURL.  Please login');
 });
 
 // INDIVIDUAL SHORT PAGE URL
+// displays the individual page of each short URL
 app.get("/urls/:shortURL", (req, res) => {
-  if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
-
+  console.log(urlDatabase);
+  if (urlDatabase[req.params.shortURL] !== (req.params.shortURL)) {
+    res.status(404).send('Cannot find path');
+  } else if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
       urlUserID: urlDatabase[req.params.shortURL].id,
       user: users[req.session.userId] };
     res.render("urlsShow", templateVars);
-  } else {
-    res.status(404).send('cannot find path');
+  }  else {
+    res.status(401).send('You do not have permission to access this path. Please login');
   }
-
 });
 
+// allows user to edit the long form URL
 app.post("/urls/:shortURL", (req,res) => {
 
   if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
@@ -183,8 +196,9 @@ app.post("/urls/:shortURL", (req,res) => {
   }
 });
 
+// redirects to the users endpoint URL (eg. google.com, etc)
 app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortUrl]) {
+  if (urlDatabase[req.params.shortURL]) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
     if (longURL === undefined) {
       res.status(302);
@@ -196,14 +210,15 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-// OTHERS
+// typing the base path will bring user to the login page
 app.get("/", (req, res) => {
   if (userCookie(req.session.userId, users)) {
     res.redirect('/urls');
   } else {
-    res.redirect('/register');
+    res.redirect('/login');
   }
 });
+// OTHERS
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
