@@ -169,17 +169,18 @@ app.post("/urls/:short/delete", (req, res) => {
 // INDIVIDUAL SHORT PAGE URL
 // displays the individual page of each short URL
 app.get("/urls/:shortURL", (req, res) => {
-  console.log(urlDatabase);
-  if (urlDatabase[req.params.shortURL] !== (req.params.shortURL)) {
-    res.status(404).send('Cannot find path');
-  } else if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
+  // if (urlDatabase[req.params.shortURL] !== (req.params.shortURL)) {
+  //   res.status(404).send('Cannot find path');
+  if (req.session.userId === urlDatabase[req.params.shortURL].userID) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
       urlUserID: urlDatabase[req.params.shortURL].id,
       user: users[req.session.userId] };
     res.render("urlsShow", templateVars);
-  }  else {
+  } else if (urlDatabase[req.params.shortURL] !== (req.params.shortURL)) {
+    res.status(404).send('Cannot find path');
+  } else {
     res.status(401).send('You do not have permission to access this path. Please login');
   }
 });
